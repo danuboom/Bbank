@@ -4,15 +4,20 @@ import java.time.Instant
 
 enum class AccountType { CHECKING, SAVINGS, CREDIT }
 
+data class User(
+    val id: String, // Added
+    val username: String,
+    val displayName: String
+)
 
 data class Account(
     val id: String,
+    val ownerId: String, // Added: Links to User.id
     val name: String,
     val type: AccountType,
     val number: String,
     val balanceSatang: Long
 )
-
 
 data class Txn(
     val id: String,
@@ -22,10 +27,6 @@ data class Txn(
     val description: String,
     val at: Instant
 )
-
-
-data class User(val username: String, val displayName: String)
-
 
 sealed class TransferResult {
     data class Success(val txn: Txn) : TransferResult()
