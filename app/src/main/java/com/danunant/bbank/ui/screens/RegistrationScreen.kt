@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.danunant.bbank.vm.AuthViewModel
 import android.widget.Toast // Added
 import androidx.compose.ui.platform.LocalContext // Added
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegistrationScreen(

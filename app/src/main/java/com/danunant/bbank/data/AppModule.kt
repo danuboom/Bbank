@@ -15,7 +15,7 @@ import java.time.Instant.now
 import java.util.UUID
 import javax.inject.Provider
 import javax.inject.Singleton
-
+import com.danunant.bbank.core.CryptoUtils
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
@@ -54,11 +54,27 @@ object AppModule {
 
 
     // --- Seed Data Functions ---
-    private fun seedUsers(): List<User> = listOf(
-        User("U1", "alice", "Alice Smith", "1234"),
-        User("U2", "bob", "Bob Johnson", "1234"),
-        User("U3", "test", "Test User", "1234")
-    )
+    private fun seedUsers(): List<User> {
+        val users = mutableListOf<User>()
+        val testPin = "1234".toCharArray() // The PIN for all test users
+
+        // User 1: alice
+        val salt1 = CryptoUtils.generateSalt()
+        val hash1 = CryptoUtils.hashPin(testPin, salt1)
+        users.add(User("U1", "alice", "Alice Smith", CryptoUtils.encodeToBase64(hash1), CryptoUtils.encodeToBase64(salt1)))
+
+        // User 2: bob
+        val salt2 = CryptoUtils.generateSalt()
+        val hash2 = CryptoUtils.hashPin(testPin, salt2)
+        users.add(User("U2", "bob", "Bob Johnson", CryptoUtils.encodeToBase64(hash2), CryptoUtils.encodeToBase64(salt2)))
+
+        // User 3: test
+        val salt3 = CryptoUtils.generateSalt()
+        val hash3 = CryptoUtils.hashPin(testPin, salt3)
+        users.add(User("U3", "test", "Test User", CryptoUtils.encodeToBase64(hash3), CryptoUtils.encodeToBase64(salt3)))
+
+        return users
+    }
 
     private fun seedAccounts(): List<Account> = listOf(
         // Alice's Accounts

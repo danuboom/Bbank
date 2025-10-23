@@ -12,6 +12,7 @@ import java.time.Instant.now
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.danunant.bbank.core.CryptoUtils
 
 @Singleton
 class BbankRepository @Inject constructor(
@@ -47,45 +48,31 @@ class BbankRepository @Inject constructor(
     private var lastTransferToken: String? = null
 
 
-    // --- THIS FUNCTION IS NOW SUSPEND AND CORRECT ---
-    suspend fun login(username: String, pin: String): Boolean {
-        if (username.isBlank() || pin.length != 4) { // Basic check
-            _currentUser.value = null
-            return false
-        }
-
-        val user = dao.getUserByUsername(username)
-
-        // Check against stored PIN
-        return if (user != null && user.pin == pin) {
-            _currentUser.value = user
-            true
-        } else {
-            _currentUser.value = null
-            false
-        }
-    }
-
-    fun logout() {
-        _currentUser.value = null
-    }
-
-    // --- ADDED: Registration Function ---
     suspend fun registerUser(username: String, displayName: String, pin: String): Result<User> {
         // Basic validation
-        if (username.isBlank() || displayName.isBlank() || pin.length != 4 || !pin.all { it.isDigit() }) { // Basic PIN check
+        if (username.isBlank() || displayName.isBlank() || pin.length != 4 || !pin.all { it.isDigit() }) {
             return Result.failure(IllegalArgumentException("Invalid input. PIN must be 4 digits."))
         }
         if (dao.doesUserExist(username)) {
             return Result.failure(IllegalArgumentException("Username already taken."))
         }
 
-        // Create new user WITH PIN
+        // --- HASHING LOGIC ---
+        val saltBytes = CryptoUtils.generateSalt()
+        val hashBytes = CryptoUtils.hashPin(pin.toCharArray(), saltBytes)
+
+        // Encode to Base64 Strings for storage
+        val saltString = CryptoUtils.encodeToBase64(saltBytes)
+        val hashString = CryptoUtils.encodeToBase64(hashBytes)
+        // --- END HASHING ---
+
+        // Create new user with HASH and SALT
         val newUser = User(
             id = UUID.randomUUID().toString(),
             username = username,
             displayName = displayName,
-            pin = pin // Store the PIN (Hashing needed for real app)
+            pinHash = hashString, // Store hash
+            salt = saltString     // Store salt
         )
 
         return try {
@@ -96,6 +83,38 @@ class BbankRepository @Inject constructor(
         }
     }
 
+    suspend fun login(username: String, pin: String): Boolean {
+        if (username.isBlank() || pin.length != 4) {
+            _currentUser.value = null
+            return false
+        }
+
+        val user = dao.getUserByUsername(username)
+
+        // --- VERIFICATION LOGIC ---
+        return if (user != null) {
+            // Decode salt and hash from Base64
+            val saltBytes = CryptoUtils.decodeFromBase64(user.salt)
+            val storedHashBytes = CryptoUtils.decodeFromBase64(user.pinHash)
+
+            // Verify the entered PIN against the stored hash and salt
+            if (CryptoUtils.verifyPin(pin.toCharArray(), storedHashBytes, saltBytes)) {
+                _currentUser.value = user // Login success
+                true
+            } else {
+                _currentUser.value = null // PIN incorrect
+                false
+            }
+        } else {
+            _currentUser.value = null // User not found
+            false
+        }
+        // --- END VERIFICATION ---
+    }
+
+    fun logout() {
+        _currentUser.value = null
+    }
     // --- ADDED FOR CRUD ---
     suspend fun getAccountById(id: String): Account? {
         return dao.getAccountById(id)

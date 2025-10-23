@@ -16,7 +16,10 @@ data class User(
     @PrimaryKey val id: String,
     val username: String,
     val displayName: String,
-    val pin: String
+    // --- UPDATED FIELDS ---
+    val pinHash: String, // Store as Base64 String
+    val salt: String     // Store as Base64 String
+    // --- END UPDATE ---
 )
 
 @Entity(
