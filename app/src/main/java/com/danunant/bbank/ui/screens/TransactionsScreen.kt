@@ -44,16 +44,12 @@ import com.danunant.bbank.vm.BankViewModel
 @Composable
 fun TransactionsScreen(
     viewModel: BankViewModel,
-    onShowLogout: () -> Unit, // Added
+    onShowLogout: () -> Unit,
     onBack: () -> Unit
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
-
-    // Collect state from ViewModel
     val txns by viewModel.txns.collectAsState()
     val accounts by viewModel.accounts.collectAsState()
-
-    // Create a set of the user's account IDs to check against
     val userAccountIds by remember(accounts) {
         derivedStateOf { accounts.map { it.id }.toSet() }
     }
@@ -71,7 +67,6 @@ fun TransactionsScreen(
                         )
                     }
                 },
-                // --- ADDED LOGOUT BUTTON ---
                 actions = {
                     IconButton(onClick = onShowLogout) {
                         Icon(Icons.Default.Logout, contentDescription = "Logout")
@@ -90,12 +85,12 @@ fun TransactionsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(0.dp), // ListItem handles its own padding
+            contentPadding = PaddingValues(0.dp),
         ) {
             items(txns) { txn ->
                 TransactionItem(
                     txn = txn,
-                    userAccountIds = userAccountIds // Pass the set
+                    userAccountIds = userAccountIds
                 )
                 Divider(Modifier.padding(horizontal = 16.dp))
             }
@@ -106,31 +101,26 @@ fun TransactionsScreen(
 @Composable
 private fun TransactionItem(
     txn: Txn,
-    userAccountIds: Set<String> // Added
+    userAccountIds: Set<String>
 ) {
-    // --- CORRECTED LOGIC ---
     val isDebit = txn.fromAccountId in userAccountIds
     val isCredit = txn.toAccountId in userAccountIds
 
-    // Determine icon, color, and prefix based on transfer type
     val (icon, color, prefix) = when {
-        // User's account -> External (Debit/Withdrawal)
         isDebit && !isCredit -> Triple(
             Icons.Filled.ArrowUpward,
             MaterialTheme.colorScheme.error,
             "-"
         )
-        // External -> User's account (Credit/Deposit)
         !isDebit && isCredit -> Triple(
             Icons.Filled.ArrowDownward,
-            Color(0xFF2E7D32), // Dark Green
+            Color(0xFF2E7D32),
             "+"
         )
-        // User's account -> User's account (Internal Transfer)
         else -> Triple(
             Icons.AutoMirrored.Filled.ArrowForward,
             MaterialTheme.colorScheme.onSurfaceVariant,
-            "" // Neutral
+            ""
         )
     }
 
@@ -140,9 +130,6 @@ private fun TransactionItem(
         else -> "Transfer"
     }
 
-    // --- END LOGIC ---
-
-    // Use ListItem for better semantics and standard Material layout
     ListItem(
         headlineContent = {
             Text(

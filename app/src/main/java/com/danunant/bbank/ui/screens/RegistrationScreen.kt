@@ -14,8 +14,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.danunant.bbank.vm.AuthViewModel
-import android.widget.Toast // Added
-import androidx.compose.ui.platform.LocalContext // Added
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,12 +33,10 @@ fun RegistrationScreen(
     val error by viewModel.registrationError.collectAsState()
     val success by viewModel.registrationSuccess.collectAsState()
     val context = LocalContext.current
-    // Navigate back automatically on success
+
     LaunchedEffect(success) {
         if (success) {
-            // --- SHOW TOAST ---
             Toast.makeText(context, "Registration Successful!", Toast.LENGTH_SHORT).show()
-            // --- END TOAST ---
             onRegistrationSuccess()
             viewModel.resetRegistrationSuccess()
         }
@@ -95,13 +93,11 @@ fun RegistrationScreen(
             OutlinedTextField(
                 value = pin,
                 onValueChange = {
-                    if (it.length <= maxPinLength && it.all { c -> c.isDigit() }) { // Allow only digits
+                    if (it.length <= maxPinLength && it.all { c -> c.isDigit() }) {
                         pin = it; viewModel.clearError()
                     }
                 },
-                // --- UPDATE LABEL ---
                 label = { Text("Choose a 4-Digit PIN") },
-                // --- END UPDATE ---
                 leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
@@ -111,7 +107,7 @@ fun RegistrationScreen(
             OutlinedTextField(
                 value = confirmPin,
                 onValueChange = {
-                    if (it.length <= maxPinLength && it.all { c -> c.isDigit() }) { // Allow only digits
+                    if (it.length <= maxPinLength && it.all { c -> c.isDigit() }) {
                         confirmPin = it; viewModel.clearError()
                     }
                 },

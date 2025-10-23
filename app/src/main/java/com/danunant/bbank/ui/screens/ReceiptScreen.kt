@@ -41,7 +41,7 @@ import com.danunant.bbank.data.Txn
 fun ReceiptScreen(
     txn: Txn?,
     onShare: (Txn) -> Unit,
-    onShowLogout: () -> Unit, // Added
+    onShowLogout: () -> Unit,
     onBack: () -> Unit
 ) {
     Scaffold(
@@ -56,7 +56,6 @@ fun ReceiptScreen(
                         )
                     }
                 },
-                // --- ADDED LOGOUT BUTTON ---
                 actions = {
                     IconButton(onClick = onShowLogout) {
                         Icon(Icons.Default.Logout, contentDescription = "Logout")
@@ -86,7 +85,6 @@ fun ReceiptScreen(
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Main Receipt Card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -107,7 +105,6 @@ fun ReceiptScreen(
                     )
                     Divider()
 
-                    // Amount Section
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                         Text("Transfer Amount", style = MaterialTheme.typography.bodyMedium)
                         Text(
@@ -119,7 +116,6 @@ fun ReceiptScreen(
 
                     Divider()
 
-                    // Transaction Details
                     ReceiptDetailRow("From", txn.fromOwnerName ?: "Unknown")
                     ReceiptDetailRow("To", txn.toOwnerName ?: "Unknown")
                     ReceiptDetailRow("Status", "SUCCESS", Color.Green)
@@ -137,7 +133,6 @@ fun ReceiptScreen(
 
             Spacer(Modifier.height(32.dp))
 
-            // Action Button
             Button(
                 onClick = { onShare(txn) },
                 modifier = Modifier.fillMaxWidth(),
@@ -151,7 +146,6 @@ fun ReceiptScreen(
     }
 }
 
-// Utility Composable for consistent detail rows
 @Composable
 private fun ReceiptDetailRow(label: String, value: String, valueColor: Color = MaterialTheme.colorScheme.onSurface) {
     Row(

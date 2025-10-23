@@ -18,38 +18,33 @@ import com.danunant.bbank.core.CryptoUtils
 class BbankRepository @Inject constructor(
     private val dao: BbankDao
 ) {
-    // Scope for repository-level coroutines
     private val scope = CoroutineScope(Dispatchers.IO)
 
-    // --- User-Facing State ---
     private val _currentUser = MutableStateFlow<User?>(null)
     val currentUser: StateFlow<User?> = _currentUser
 
-    // These flows are now powered by the DB and react to the user logging in
     val accounts: StateFlow<List<Account>> = _currentUser.flatMapLatest { user ->
         if (user == null) {
-            flowOf(emptyList()) // No user, empty list
+            flowOf(emptyList())
         } else {
-            dao.getAccounts(user.id) // Get accounts flow from DB
+            dao.getAccounts(user.id)
         }
     }.stateIn(scope, kotlinx.coroutines.flow.SharingStarted.Lazily, emptyList())
 
     val txns: StateFlow<List<Txn>> = accounts.flatMapLatest { accts ->
         if (accts.isEmpty()) {
-            flowOf(emptyList()) // No accounts, empty list
+            flowOf(emptyList())
         } else {
             val accountIds = accts.map { it.id }.toSet()
-            dao.getTransactions(accountIds) // Get txns flow from DB
+            dao.getTransactions(accountIds)
         }
     }.stateIn(scope, kotlinx.coroutines.flow.SharingStarted.Lazily, emptyList())
 
 
-    // simple duplicate prevention
     private var lastTransferToken: String? = null
 
 
     suspend fun registerUser(username: String, displayName: String, pin: String): Result<User> {
-        // Basic validation
         if (username.isBlank() || displayName.isBlank() || pin.length != 4 || !pin.all { it.isDigit() }) {
             return Result.failure(IllegalArgumentException("Invalid input. PIN must be 4 digits."))
         }
@@ -57,22 +52,18 @@ class BbankRepository @Inject constructor(
             return Result.failure(IllegalArgumentException("Username already taken."))
         }
 
-        // --- HASHING LOGIC ---
         val saltBytes = CryptoUtils.generateSalt()
         val hashBytes = CryptoUtils.hashPin(pin.toCharArray(), saltBytes)
 
-        // Encode to Base64 Strings for storage
         val saltString = CryptoUtils.encodeToBase64(saltBytes)
         val hashString = CryptoUtils.encodeToBase64(hashBytes)
-        // --- END HASHING ---
 
-        // Create new user with HASH and SALT
         val newUser = User(
             id = UUID.randomUUID().toString(),
             username = username,
             displayName = displayName,
-            pinHash = hashString, // Store hash
-            salt = saltString     // Store salt
+            pinHash = hashString,
+            salt = saltString
         )
 
         return try {
@@ -91,31 +82,27 @@ class BbankRepository @Inject constructor(
 
         val user = dao.getUserByUsername(username)
 
-        // --- VERIFICATION LOGIC ---
         return if (user != null) {
-            // Decode salt and hash from Base64
             val saltBytes = CryptoUtils.decodeFromBase64(user.salt)
             val storedHashBytes = CryptoUtils.decodeFromBase64(user.pinHash)
 
-            // Verify the entered PIN against the stored hash and salt
             if (CryptoUtils.verifyPin(pin.toCharArray(), storedHashBytes, saltBytes)) {
-                _currentUser.value = user // Login success
+                _currentUser.value = user
                 true
             } else {
-                _currentUser.value = null // PIN incorrect
+                _currentUser.value = null
                 false
             }
         } else {
-            _currentUser.value = null // User not found
+            _currentUser.value = null
             false
         }
-        // --- END VERIFICATION ---
     }
 
     fun logout() {
         _currentUser.value = null
     }
-    // --- ADDED FOR CRUD ---
+
     suspend fun getAccountById(id: String): Account? {
         return dao.getAccountById(id)
     }
@@ -143,12 +130,9 @@ class BbankRepository @Inject constructor(
     }
 
     suspend fun deleteAccount(accountId: String) {
-        // You might add logic here to check if balance is 0
         dao.deleteAccountById(accountId)
     }
-    // --- END ADD ---
 
-    // --- UPDATED to use DAO ---
     suspend fun transfer(token: String, fromId: String, toAccountNumber: String, amountSatang: Long, desc: String): TransferResult {
         if (token.isBlank()) return TransferResult.Error("bad_token", "Invalid request token")
         if (lastTransferToken == token) return TransferResult.Error("duplicate", "This transfer was already processed.")
@@ -166,7 +150,6 @@ class BbankRepository @Inject constructor(
         val fromOwner = dao.getUserById(from.ownerId)
         val toOwner = dao.getUserById(to.ownerId)
 
-        // Apply changes
         val updatedFrom = from.copy(balanceSatang = from.balanceSatang - amountSatang)
         val updatedTo = to.copy(balanceSatang = to.balanceSatang + amountSatang)
         val txn = Txn(
@@ -180,7 +163,6 @@ class BbankRepository @Inject constructor(
             toOwnerName = toOwner?.displayName,
         )
 
-        // Use the DAO's @Transaction
         dao.performTransfer(updatedFrom, updatedTo, txn)
 
         lastTransferToken = token

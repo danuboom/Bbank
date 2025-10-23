@@ -16,15 +16,13 @@ import com.danunant.bbank.vm.BankViewModel
 import kotlinx.coroutines.launch
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.text.input.ImeAction
-// --- ADD THIS IMPORT ---
 import com.danunant.bbank.core.formatAccountNumber
-// -----------------------
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UpsertAccountScreen(
     viewModel: BankViewModel,
-    accountId: String?, // Null if creating, non-null if editing
+    accountId: String?,
     onBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -39,7 +37,6 @@ fun UpsertAccountScreen(
     val isEditMode = accountId != null
     val title = if (isEditMode) "Edit Account" else "Create Account"
 
-    // Fetch the account if we are in edit mode
     LaunchedEffect(accountId) {
         if (isEditMode) {
             account = viewModel.getAccountById(accountId!!)
@@ -65,7 +62,6 @@ fun UpsertAccountScreen(
             FloatingActionButton(
                 onClick = {
                     if (name.isBlank()){
-                        // Optional: Add name validation error state if needed
                         return@FloatingActionButton
                     }
 
@@ -74,8 +70,6 @@ fun UpsertAccountScreen(
                         onBack()
                     }
                 }
-                // Optional: Disable button visually
-                // enabled = isFormValid
             ) {
                 Icon(Icons.Default.Save, "Save Account")
             }
@@ -97,7 +91,6 @@ fun UpsertAccountScreen(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
             )
 
-            // Account Type Dropdown
             ExposedDropdownMenuBox(
                 expanded = typeExpanded,
                 onExpandedChange = { typeExpanded = !typeExpanded }
@@ -115,7 +108,6 @@ fun UpsertAccountScreen(
                     onDismissRequest = { typeExpanded = false }
                 ) {
                     AccountType.values().forEach { acctType ->
-                        // Don't allow changing to/from Credit Card
                         if (acctType != AccountType.CREDIT) {
                             DropdownMenuItem(
                                 text = { Text(acctType.name) },

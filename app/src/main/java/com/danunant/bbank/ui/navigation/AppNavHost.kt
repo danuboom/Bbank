@@ -37,7 +37,6 @@ import com.danunant.bbank.vm.BankViewModel
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 
-// Navigation graphs help organize screens
 object Graph {
     const val AUTH = "auth_graph"
     const val MAIN = "main_graph"
@@ -47,36 +46,30 @@ object Graph {
 fun AppNavHost() {
     val navController = rememberNavController()
 
-    // --- Get ViewModels at the top level ---
     val authViewModel: AuthViewModel = hiltViewModel()
     val bankViewModel: BankViewModel = hiltViewModel()
 
     val currentUser by authViewModel.currentUser.collectAsState()
     val isLogoutDialogVisible by bankViewModel.isLogoutDialogVisible.collectAsState()
 
-    // --- Central navigation logic ---
     LaunchedEffect(currentUser) {
         val currentRoute = navController.currentBackStackEntry?.destination?.parent?.route
         if (currentUser == null && currentRoute != Graph.AUTH) {
-            // User logged out, navigate to login
             navController.navigate(Graph.AUTH) {
                 popUpTo(Graph.MAIN) { inclusive = true }
             }
         }
         if (currentUser != null && currentRoute != Graph.MAIN) {
-            // User logged in, navigate to main app
             navController.navigate(Graph.MAIN) {
                 popUpTo(Graph.AUTH) { inclusive = true }
             }
         }
     }
 
-    // --- Show dialog at the top level ---
     if (isLogoutDialogVisible) {
         LogoutConfirmationDialog(
             onDismiss = bankViewModel::dismissLogoutDialog,
             onConfirm = {
-                // Just call logout. The LaunchedEffect will handle navigation.
                 bankViewModel.logout()
             }
         )
@@ -86,17 +79,12 @@ fun AppNavHost() {
         navController = navController,
         startDestination = Graph.AUTH
     ) {
-        // --- Authentication Graph (Login) ---
         authGraph(navController, authViewModel)
 
-        // --- Main App Graph (Dashboard, etc.) ---
         mainGraph(navController, bankViewModel)
     }
 }
 
-/**
- * Defines the authentication flow (login screen).
- */
 private fun NavGraphBuilder.authGraph(
     navController: NavHostController,
     authViewModel: AuthViewModel
@@ -106,9 +94,7 @@ private fun NavGraphBuilder.authGraph(
         startDestination = Routes.Login
     ) {
         composable(Routes.Login) {
-            // --- FIX: Get CoroutineScope ---
             val scope = rememberCoroutineScope()
-            // --- END FIX ---
 
             val error by authViewModel.error.collectAsState()
             LoginScreen(
@@ -124,16 +110,13 @@ private fun NavGraphBuilder.authGraph(
                 }
             )
         }
-        // --- ADDED REGISTRATION SCREEN ---
         composable(Routes.Registration) {
             RegistrationScreen(
                 viewModel = authViewModel,
                 onRegistrationSuccess = {
-                    // Go back to login screen after success
                     navController.popBackStack()
                 },
                 onBack = {
-                    // Go back to login screen if user cancels
                     navController.popBackStack()
                 }
             )
@@ -141,20 +124,15 @@ private fun NavGraphBuilder.authGraph(
     }
 }
 
-/**
- * Defines the main application flow (dashboard, transfers, etc.)
- */
 private fun NavGraphBuilder.mainGraph(
     navController: NavHostController,
-    bankViewModel: BankViewModel // Pass in the ViewModel
+    bankViewModel: BankViewModel
 ) {
     navigation(
         route = Graph.MAIN,
         startDestination = Routes.Dashboard
     ) {
-        // --- Dashboard Screen ---
         composable(Routes.Dashboard) {
-            // Get account to delete state for the dialog
             val accountToDelete by bankViewModel.accountToDelete.collectAsState()
             if (accountToDelete != null) {
                 DeleteAccountDialog(
@@ -170,7 +148,6 @@ private fun NavGraphBuilder.mainGraph(
                 onNavigateToTransfer = { navController.navigate(Routes.Transfer) },
                 onNavigateToAbout = { navController.navigate(Routes.About) },
                 onLogout = bankViewModel::showLogoutDialog,
-                // --- ADDED ---
                 onNavigateToUpsert = { accountId ->
                     val route = Routes.UpsertAccount.replace("{accountId}", accountId ?: "null")
                     navController.navigate(route)
@@ -178,13 +155,12 @@ private fun NavGraphBuilder.mainGraph(
             )
         }
 
-        // --- ADD THIS COMPOSABLE ---
         composable(
             route = Routes.UpsertAccount,
             arguments = listOf(navArgument("accountId") {
                 type = NavType.StringType
                 nullable = true
-                defaultValue = "null" // Ensure "null" string is the default
+                defaultValue = "null"
             })
         ) { backStackEntry ->
             val accountId = backStackEntry.arguments?.getString("accountId")
@@ -195,9 +171,7 @@ private fun NavGraphBuilder.mainGraph(
                 onBack = { navController.popBackStack() }
             )
         }
-        // --- END ADD ---
 
-        // --- Transactions Screen ---
         composable(Routes.Transactions) {
             TransactionsScreen(
                 viewModel = bankViewModel,
@@ -206,7 +180,6 @@ private fun NavGraphBuilder.mainGraph(
             )
         }
 
-        // --- Transfer Screen ---
         composable(Routes.Transfer) {
             TransferScreen(
                 viewModel = bankViewModel,
@@ -224,7 +197,6 @@ private fun NavGraphBuilder.mainGraph(
             )
         }
 
-        // --- Receipt Screen (with argument) ---
         composable(
             route = Routes.Receipt,
             arguments = listOf(navArgument("txnId") { type = NavType.StringType })
@@ -262,7 +234,6 @@ private fun NavGraphBuilder.mainGraph(
             )
         }
 
-        // --- About Screen ---
         composable(Routes.About) {
             AboutScreen(
                 onShowLogout = bankViewModel::showLogoutDialog,
@@ -272,7 +243,6 @@ private fun NavGraphBuilder.mainGraph(
     }
 }
 
-// --- Logout Dialog Composable ---
 @Composable
 private fun LogoutConfirmationDialog(
     onDismiss: () -> Unit,
@@ -298,10 +268,9 @@ private fun LogoutConfirmationDialog(
     )
 }
 
-// --- ADDED: Delete Account Dialog ---
 @Composable
 private fun DeleteAccountDialog(
-    account: com.danunant.bbank.data.Account, // Added full path to avoid import ambiguity if needed
+    account: com.danunant.bbank.data.Account,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {

@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun AboutScreen(
     appVersion: String = "1.0.0-beta",
-    onShowLogout: () -> Unit, // Added
+    onShowLogout: () -> Unit,
     onBack: () -> Unit
 ) {
     Scaffold(
@@ -42,7 +42,6 @@ fun AboutScreen(
                         )
                     }
                 },
-                // --- ADDED LOGOUT BUTTON ---
                 actions = {
                     IconButton(onClick = onShowLogout) {
                         Icon(Icons.Default.Logout, contentDescription = "Logout")
@@ -59,7 +58,6 @@ fun AboutScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Section 1: Application Information
             item {
                 Column(modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 8.dp)) {
                     Text(
@@ -76,7 +74,6 @@ fun AboutScreen(
                 }
             }
 
-            // Section 2: Details List
             item {
                 Divider()
                 ListItem(
@@ -101,7 +98,6 @@ fun AboutScreen(
                 Divider()
             }
 
-            // Section 3: Legal/Copyright
             item {
                 Spacer(Modifier.height(16.dp))
                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {

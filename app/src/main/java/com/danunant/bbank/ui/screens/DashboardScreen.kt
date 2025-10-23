@@ -24,13 +24,11 @@ fun DashboardScreen(
     onNavigateToTransfer: () -> Unit,
     onNavigateToAbout: () -> Unit,
     onLogout: () -> Unit,
-    // --- ADDED FOR CRUD ---
-    onNavigateToUpsert: (String?) -> Unit // Null for create, ID for edit
+    onNavigateToUpsert: (String?) -> Unit
 ) {
     val accounts by viewModel.accounts.collectAsState()
     val user by viewModel.currentUser.collectAsState()
 
-    // --- ADDED: State for Delete Dialog ---
     val accountToDelete by viewModel.accountToDelete.collectAsState()
     if (accountToDelete != null) {
         DeleteAccountDialog(
@@ -60,10 +58,9 @@ fun DashboardScreen(
                 }
             )
         },
-        // --- ADDED FAB ---
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { onNavigateToUpsert(null) } // null ID means "Create"
+                onClick = { onNavigateToUpsert(null) }
             ) {
                 Icon(Icons.Default.Add, "Create Account")
             }
@@ -93,7 +90,6 @@ fun DashboardScreen(
                     items(accounts) { acc ->
                         AccountCard(
                             account = acc,
-                            // --- ADDED ---
                             onEdit = { onNavigateToUpsert(acc.id) },
                             onDelete = { viewModel.onAccountDeleteRequest(acc) }
                         )
@@ -121,9 +117,8 @@ private fun AccountCard(
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.primary
             )
-            // --- USE FORMATTER ---
             Text(
-                text = formatAccountNumber(account.number), // Use formatter
+                text = formatAccountNumber(account.number),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 4.dp)
             )
@@ -133,8 +128,6 @@ private fun AccountCard(
                 modifier = Modifier.padding(top = 12.dp)
             )
 
-            // --- ADDED BUTTONS ---
-            // Only show buttons if balance is 0 (safer for a demo)
             if (account.balanceSatang == 0L) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),

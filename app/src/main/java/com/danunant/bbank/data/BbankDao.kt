@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface BbankDao {
 
-    // --- User ---
     @Query("SELECT * FROM users WHERE username = :username")
     suspend fun getUserByUsername(username: String): User?
 
@@ -19,7 +18,6 @@ interface BbankDao {
     @Insert(onConflict = OnConflictStrategy.ABORT) // Abort if username exists
     suspend fun insertUser(user: User)
 
-    // --- Accounts ---
     @Query("SELECT * FROM accounts WHERE ownerId = :userId")
     fun getAccounts(userId: String): Flow<List<Account>>
 
@@ -29,11 +27,9 @@ interface BbankDao {
     @Query("SELECT * FROM accounts WHERE number = :number")
     suspend fun getAccountByNumber(number: String): Account?
 
-    // --- Transactions ---
     @Query("SELECT * FROM transactions WHERE fromAccountId IN (:accountIds) OR toAccountId IN (:accountIds) ORDER BY at DESC")
     fun getTransactions(accountIds: Set<String>): Flow<List<Txn>>
 
-    // --- Transfer (All or Nothing) ---
     @Transaction
     suspend fun performTransfer(from: Account, to: Account, txn: Txn) {
         updateAccount(from)
@@ -41,7 +37,6 @@ interface BbankDao {
         insertTxn(txn)
     }
 
-    // --- ADDED FOR CRUD ---
     @Insert
     suspend fun insertAccount(account: Account)
 
@@ -50,12 +45,10 @@ interface BbankDao {
 
     @Query("DELETE FROM accounts WHERE id = :accountId")
     suspend fun deleteAccountById(accountId: String)
-    // --- END ADD ---
 
     @Insert
     suspend fun insertTxn(txn: Txn)
 
-    // --- Seeding ---
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertUsers(users: List<User>)
 

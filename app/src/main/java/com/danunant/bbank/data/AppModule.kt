@@ -24,7 +24,6 @@ object AppModule {
     @Singleton
     fun provideBbankDatabase(
         app: Application,
-        // We use Provider to avoid a circular dependency
         daoProvider: Provider<BbankDao>
     ): BbankDatabase {
         return Room.databaseBuilder(app, BbankDatabase::class.java, "bbank_db")
@@ -32,7 +31,6 @@ object AppModule {
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
-                    // Pre-populate the DB on first create
                     CoroutineScope(Dispatchers.IO).launch {
                         daoProvider.get().insertUsers(seedUsers())
                         daoProvider.get().insertAccounts(seedAccounts())
@@ -49,26 +47,18 @@ object AppModule {
         return db.bbankDao()
     }
 
-    // --- You DO NOT need a provider for BbankRepository ---
-    // Hilt knows how to create it because of @Inject constructor
-
-
-    // --- Seed Data Functions ---
     private fun seedUsers(): List<User> {
         val users = mutableListOf<User>()
-        val testPin = "1234".toCharArray() // The PIN for all test users
+        val testPin = "1234".toCharArray()
 
-        // User 1: alice
         val salt1 = CryptoUtils.generateSalt()
         val hash1 = CryptoUtils.hashPin(testPin, salt1)
         users.add(User("U1", "alice", "Alice Smith", CryptoUtils.encodeToBase64(hash1), CryptoUtils.encodeToBase64(salt1)))
 
-        // User 2: bob
         val salt2 = CryptoUtils.generateSalt()
         val hash2 = CryptoUtils.hashPin(testPin, salt2)
         users.add(User("U2", "bob", "Bob Johnson", CryptoUtils.encodeToBase64(hash2), CryptoUtils.encodeToBase64(salt2)))
 
-        // User 3: test
         val salt3 = CryptoUtils.generateSalt()
         val hash3 = CryptoUtils.hashPin(testPin, salt3)
         users.add(User("U3", "test", "Test User", CryptoUtils.encodeToBase64(hash3), CryptoUtils.encodeToBase64(salt3)))
@@ -77,26 +67,21 @@ object AppModule {
     }
 
     private fun seedAccounts(): List<Account> = listOf(
-        // Alice's Accounts
         Account("A1", "U1", "Main Checking", AccountType.CHECKING, "123-4-56789-0", 25_000_00),
         Account("A2", "U1", "Savings", AccountType.SAVINGS, "987-6-54321-0", 75_500_00),
         Account("A3", "U1", "Credit Card", AccountType.CREDIT, "5555-88XX-XXXX-1234", -5_200_00),
 
-        // Bob's Accounts
         Account("B1", "U2", "Primary", AccountType.CHECKING, "111-2-33333-4", 10_000_00),
         Account("B2", "U2", "Vacation Fund", AccountType.SAVINGS, "222-3-44444-5", 1_500_00),
 
-        // Test User's Account
         Account("T1", "U3", "Test Account", AccountType.CHECKING, "000-0-00000-0", 1_000_000),
     )
 
     private fun seedTxns(): List<Txn> = listOf(
-        // Alice's Txns
         Txn(UUID.randomUUID().toString(), null, "A1", 5_000_00, "Initial deposit", now().minusSeconds(86400 * 3)),
         Txn(UUID.randomUUID().toString(), "A1", "A2", 1_200_00, "Save for rain", now().minusSeconds(86400 * 2)),
         Txn(UUID.randomUUID().toString(), "A1", null, 300_00, "Coffee shop", now().minusSeconds(86400 * 1)),
 
-        // Bob's Txns
         Txn(UUID.randomUUID().toString(), null, "B1", 10_000_00, "Paycheck", now().minusSeconds(86400 * 2)),
         Txn(UUID.randomUUID().toString(), "B1", "B2", 500_00, "Move to vacation", now().minusSeconds(86400 * 1)),
     )

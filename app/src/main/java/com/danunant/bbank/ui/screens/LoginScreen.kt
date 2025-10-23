@@ -71,7 +71,7 @@ fun LoginScreen(
             value = username,
             onValueChange = {
                 username = it
-                onClearError() // Clear error on type
+                onClearError()
             },
             label = { Text("Username or Account ID") },
             leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Username Icon") },
@@ -86,7 +86,7 @@ fun LoginScreen(
             onValueChange = {
                 if (it.length <= maxPinLength) {
                     pin = it
-                    onClearError() // Clear error on type
+                    onClearError()
                 }
             },
             label = { Text("PIN") },
@@ -115,9 +115,8 @@ fun LoginScreen(
             Text("Login", style = MaterialTheme.typography.titleMedium)
         }
 
-        Spacer(Modifier.height(16.dp)) // Spacing
+        Spacer(Modifier.height(16.dp))
 
-        // --- ADDED REGISTER BUTTON ---
         TextButton(onClick = onNavigateToRegister) {
             Text("Don't have an account? Register")
         }

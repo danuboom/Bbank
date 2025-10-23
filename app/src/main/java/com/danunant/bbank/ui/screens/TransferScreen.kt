@@ -35,7 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.ImeAction // Make sure this is imported
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.danunant.bbank.data.Account
@@ -64,23 +64,19 @@ fun TransferScreen(
 
     var fromExpanded by remember { mutableStateOf(false) }
     var fromAccountId by remember { mutableStateOf<String?>(fromAccounts.firstOrNull()?.id) }
-    var toAccountNumber by remember { mutableStateOf("") } // Holds formatted number for display
+    var toAccountNumber by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     var desc by remember { mutableStateOf("") }
 
     val selectedFromAccount = fromAccounts.find { it.id == fromAccountId }
 
-    // Validation
     val isAmountValid = (amount.toDoubleOrNull() ?: 0.0) > 0
-    // Compare unformatted numbers
     val plainToAccountNumber = unformatAccountNumber(toAccountNumber)
     val isToAccountValid = plainToAccountNumber.length == 10 && plainToAccountNumber.all { it.isDigit() }
     val isSameAccount = selectedFromAccount?.number == plainToAccountNumber
 
-    // Form is valid ONLY if the 'to' account number format is correct
     val isFormValid = isAmountValid && isToAccountValid && !isSameAccount && fromAccountId != null
 
-    // Handle transfer result
     LaunchedEffect(transferResult) {
         if (transferResult is TransferResult.Success) {
             val txnId = (transferResult as TransferResult.Success).txn.id
@@ -141,26 +137,22 @@ fun TransferScreen(
             )
 
             OutlinedTextField(
-                value = toAccountNumber, // Display formatted number
+                value = toAccountNumber,
                 onValueChange = { newValue ->
-                    // Filter non-digits, format, and update state
                     val plainNumber = newValue.filter { it.isDigit() }
-                    // Limit length for typical account numbers if needed (e.g., 10 digits)
                     if (plainNumber.length <= 10) {
-                        toAccountNumber = formatAccountNumber(plainNumber) // Format for display
-                        viewModel.clearTransferResult() // Clear backend error on type
+                        toAccountNumber = formatAccountNumber(plainNumber)
+                        viewModel.clearTransferResult()
                     }
                 },
-                label = { Text("To Account Number (10 digits)") }, // Updated label
+                label = { Text("To Account Number (10 digits)") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                // Change Keyboard Type
                 keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Phone, // Allows numbers and hyphens visually
+                    keyboardType = KeyboardType.Phone,
                     imeAction = ImeAction.Next
                 ),
-                // Add error display
-                isError = toAccountNumber.isNotBlank() && !isToAccountValid, // Show error if format wrong
+                isError = toAccountNumber.isNotBlank() && !isToAccountValid,
                 supportingText = {
                     if (toAccountNumber.isNotBlank() && !isToAccountValid) {
                         Text("Must be 10 digits.", color = MaterialTheme.colorScheme.error)
@@ -180,7 +172,7 @@ fun TransferScreen(
                 label = { Text("Amount (THB)") },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Decimal,
-                    imeAction = ImeAction.Next // Add ImeAction
+                    imeAction = ImeAction.Next
                 ),
                 modifier = Modifier.fillMaxWidth(),
                 isError = amount.isNotBlank() && !isAmountValid
@@ -193,7 +185,7 @@ fun TransferScreen(
                     viewModel.clearTransferResult()
                 },
                 label = { Text("Description (Optional)") },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), // Add ImeAction
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -203,10 +195,10 @@ fun TransferScreen(
                 onClick = {
                     val amountInThb = amount.toDoubleOrNull() ?: 0.0
                     val satang = (amountInThb * 100).toLong()
-                    val plainAccountNumberSubmit = unformatAccountNumber(toAccountNumber) // Unformat before sending
+                    val plainAccountNumberSubmit = unformatAccountNumber(toAccountNumber)
                     viewModel.onTransfer(fromAccountId!!, plainAccountNumberSubmit, satang, desc.trim())
                 },
-                enabled = isFormValid, // Button enabled only if form is fully valid
+                enabled = isFormValid,
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             ) {
                 Text("Confirm Transfer")
@@ -245,7 +237,6 @@ private fun AccountDropdown(
         modifier = Modifier.fillMaxWidth()
     ) {
         OutlinedTextField(
-            // Use formatter in Dropdown Display
             value = selectedAccount?.let { "${it.name} (${formatAccountNumber(it.number)})" } ?: "",
             onValueChange = {},
             readOnly = true,
@@ -264,7 +255,6 @@ private fun AccountDropdown(
                     text = {
                         Column {
                             Text(account.name, style = MaterialTheme.typography.titleSmall)
-                            // Use formatter in Dropdown Item
                             Text(formatAccountNumber(account.number), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     },
