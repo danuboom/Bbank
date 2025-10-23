@@ -17,22 +17,55 @@ class AuthViewModel @Inject constructor(
 
     val currentUser: StateFlow<User?> = repository.currentUser
 
-    // --- Add error state ---
-    private val _error = MutableStateFlow<String?>(null)
+    // --- Login State ---
+    private val _error = MutableStateFlow<String?>(null) // Correct definition
     val error: StateFlow<String?> = _error
 
-    fun login(username: String, pin: String) {
-        viewModelScope.launch {
-            val success = repository.login(username, pin)
-            if (!success) {
-                _error.value = "Invalid username or PIN"
-            }
-            // Success is handled by the NavHost observing currentUser
+    // --- Registration State ---
+    private val _registrationError = MutableStateFlow<String?>(null)
+    val registrationError: StateFlow<String?> = _registrationError
+    private val _registrationSuccess = MutableStateFlow(false)
+    val registrationSuccess: StateFlow<Boolean> = _registrationSuccess
+
+    suspend fun login(username: String, pin: String) {
+        val success = repository.login(username, pin)
+        if (!success) {
+            _error.value = "Invalid username or PIN" // FIX: Use _error
+        } else {
+            _error.value = null // FIX: Use _error
         }
     }
 
-    // --- Add function to clear error ---
     fun clearError() {
-        _error.value = null
+        _error.value = null // FIX: Use _error
+        _registrationError.value = null
+    }
+
+    fun register(username: String, displayName: String, pin: String, confirmPin: String) {
+        viewModelScope.launch {
+            clearError()
+            _registrationSuccess.value = false
+
+            if (pin != confirmPin) {
+                _registrationError.value = "PINs do not match."
+                return@launch
+            }
+            if (pin.length != 4 || !pin.all { it.isDigit() }) {
+                _registrationError.value = "PIN must be 4 digits."
+                return@launch
+            }
+
+            val result = repository.registerUser(username, displayName, pin)
+
+            result.onSuccess {
+                _registrationSuccess.value = true
+            }.onFailure { exception ->
+                _registrationError.value = exception.message ?: "Registration failed."
+            }
+        }
+    }
+
+    fun resetRegistrationSuccess() {
+        _registrationSuccess.value = false
     }
 }

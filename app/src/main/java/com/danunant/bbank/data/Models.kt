@@ -1,26 +1,46 @@
 package com.danunant.bbank.data
 
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.PrimaryKey
 import java.time.Instant
 
 enum class AccountType { CHECKING, SAVINGS, CREDIT }
 
+@Entity(
+    tableName = "users",
+    indices = [Index(value = ["username"], unique = true)]
+)
 data class User(
-    val id: String, // Added
+    @PrimaryKey val id: String,
     val username: String,
-    val displayName: String
+    val displayName: String,
+    val pin: String
 )
 
+@Entity(
+    tableName = "accounts",
+    indices = [Index(value = ["ownerId"])]
+)
 data class Account(
-    val id: String,
-    val ownerId: String, // Added: Links to User.id
+    @PrimaryKey val id: String,
+    val ownerId: String,
     val name: String,
     val type: AccountType,
     val number: String,
-    val balanceSatang: Long
+    val balanceSatang: Long,
 )
 
+@Entity(
+    tableName = "transactions",
+    indices = [
+        Index(value = ["fromAccountId"]),
+        Index(value = ["toAccountId"])
+    ]
+)
 data class Txn(
-    val id: String,
+    @PrimaryKey val id: String,
     val fromAccountId: String?,
     val toAccountId: String?,
     val amountSatang: Long,

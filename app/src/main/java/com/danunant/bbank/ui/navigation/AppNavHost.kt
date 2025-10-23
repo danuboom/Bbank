@@ -30,8 +30,12 @@ import com.danunant.bbank.ui.screens.LoginScreen
 import com.danunant.bbank.ui.screens.ReceiptScreen
 import com.danunant.bbank.ui.screens.TransactionsScreen
 import com.danunant.bbank.ui.screens.TransferScreen
+import com.danunant.bbank.ui.screens.UpsertAccountScreen
+import com.danunant.bbank.ui.screens.RegistrationScreen
 import com.danunant.bbank.vm.AuthViewModel
 import com.danunant.bbank.vm.BankViewModel
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 // Navigation graphs help organize screens
 object Graph {
@@ -43,14 +47,14 @@ object Graph {
 fun AppNavHost() {
     val navController = rememberNavController()
 
-    // --- FIX: Get ViewModels at the top level ---
+    // --- Get ViewModels at the top level ---
     val authViewModel: AuthViewModel = hiltViewModel()
     val bankViewModel: BankViewModel = hiltViewModel()
 
     val currentUser by authViewModel.currentUser.collectAsState()
     val isLogoutDialogVisible by bankViewModel.isLogoutDialogVisible.collectAsState()
 
-    // --- FIX: Central navigation logic ---
+    // --- Central navigation logic ---
     LaunchedEffect(currentUser) {
         val currentRoute = navController.currentBackStackEntry?.destination?.parent?.route
         if (currentUser == null && currentRoute != Graph.AUTH) {
@@ -67,7 +71,7 @@ fun AppNavHost() {
         }
     }
 
-    // --- FIX: Show dialog at the top level ---
+    // --- Show dialog at the top level ---
     if (isLogoutDialogVisible) {
         LogoutConfirmationDialog(
             onDismiss = bankViewModel::dismissLogoutDialog,
@@ -95,20 +99,43 @@ fun AppNavHost() {
  */
 private fun NavGraphBuilder.authGraph(
     navController: NavHostController,
-    authViewModel: AuthViewModel // Pass in the ViewModel
+    authViewModel: AuthViewModel
 ) {
     navigation(
         route = Graph.AUTH,
         startDestination = Routes.Login
     ) {
         composable(Routes.Login) {
-            // Use the ViewModel provided
-            val error by authViewModel.error.collectAsState()
+            // --- FIX: Get CoroutineScope ---
+            val scope = rememberCoroutineScope()
+            // --- END FIX ---
 
+            val error by authViewModel.error.collectAsState()
             LoginScreen(
-                onLogin = authViewModel::login,
+                onLogin = { username, pin ->
+                    scope.launch {
+                        authViewModel.login(username, pin)
+                    }
+                },
                 error = error,
-                onClearError = authViewModel::clearError
+                onClearError = authViewModel::clearError,
+                onNavigateToRegister = {
+                    navController.navigate(Routes.Registration)
+                }
+            )
+        }
+        // --- ADDED REGISTRATION SCREEN ---
+        composable(Routes.Registration) {
+            RegistrationScreen(
+                viewModel = authViewModel,
+                onRegistrationSuccess = {
+                    // Go back to login screen after success
+                    navController.popBackStack()
+                },
+                onBack = {
+                    // Go back to login screen if user cancels
+                    navController.popBackStack()
+                }
             )
         }
     }
@@ -127,14 +154,48 @@ private fun NavGraphBuilder.mainGraph(
     ) {
         // --- Dashboard Screen ---
         composable(Routes.Dashboard) {
+            // Get account to delete state for the dialog
+            val accountToDelete by bankViewModel.accountToDelete.collectAsState()
+            if (accountToDelete != null) {
+                DeleteAccountDialog(
+                    account = accountToDelete!!,
+                    onConfirm = bankViewModel::onAccountDeleteConfirm,
+                    onDismiss = bankViewModel::onAccountDeleteDismiss
+                )
+            }
+
             DashboardScreen(
                 viewModel = bankViewModel,
                 onNavigateToTransactions = { navController.navigate(Routes.Transactions) },
                 onNavigateToTransfer = { navController.navigate(Routes.Transfer) },
                 onNavigateToAbout = { navController.navigate(Routes.About) },
-                onLogout = bankViewModel::showLogoutDialog
+                onLogout = bankViewModel::showLogoutDialog,
+                // --- ADDED ---
+                onNavigateToUpsert = { accountId ->
+                    val route = Routes.UpsertAccount.replace("{accountId}", accountId ?: "null")
+                    navController.navigate(route)
+                }
             )
         }
+
+        // --- ADD THIS COMPOSABLE ---
+        composable(
+            route = Routes.UpsertAccount,
+            arguments = listOf(navArgument("accountId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = "null" // Ensure "null" string is the default
+            })
+        ) { backStackEntry ->
+            val accountId = backStackEntry.arguments?.getString("accountId")
+
+            UpsertAccountScreen(
+                viewModel = bankViewModel,
+                accountId = if (accountId == "null") null else accountId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        // --- END ADD ---
 
         // --- Transactions Screen ---
         composable(Routes.Transactions) {
@@ -227,6 +288,33 @@ private fun LogoutConfirmationDialog(
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
             ) {
                 Text("Log Out")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+// --- ADDED: Delete Account Dialog ---
+@Composable
+private fun DeleteAccountDialog(
+    account: com.danunant.bbank.data.Account, // Added full path to avoid import ambiguity if needed
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Delete Account") },
+        text = { Text("Are you sure you want to delete '${account.name}'? This action cannot be undone.") },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text("Delete")
             }
         },
         dismissButton = {

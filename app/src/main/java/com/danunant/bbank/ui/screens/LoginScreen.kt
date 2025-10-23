@@ -29,13 +29,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.TextButton
 import com.danunant.bbank.R
 
 @Composable
 fun LoginScreen(
     onLogin: (String, String) -> Unit,
     error: String?,
-    onClearError: () -> Unit
+    onClearError: () -> Unit,
+    onNavigateToRegister: () -> Unit
 ) {
     var username by remember { mutableStateOf("") }
     var pin by remember { mutableStateOf("") }
@@ -111,6 +113,13 @@ fun LoginScreen(
                 .height(56.dp)
         ) {
             Text("Login", style = MaterialTheme.typography.titleMedium)
+        }
+
+        Spacer(Modifier.height(16.dp)) // Spacing
+
+        // --- ADDED REGISTER BUTTON ---
+        TextButton(onClick = onNavigateToRegister) {
+            Text("Don't have an account? Register")
         }
     }
 }
