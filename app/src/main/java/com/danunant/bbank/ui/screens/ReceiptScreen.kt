@@ -120,6 +120,8 @@ fun ReceiptScreen(
                     Divider()
 
                     // Transaction Details
+                    ReceiptDetailRow("From", txn.fromOwnerName ?: "Unknown")
+                    ReceiptDetailRow("To", txn.toOwnerName ?: "Unknown")
                     ReceiptDetailRow("Status", "SUCCESS", Color.Green)
                     ReceiptDetailRow("Transaction ID", txn.id.take(12) + "…")
                     ReceiptDetailRow("Date & Time", formatThaiDateTime(txn.at))

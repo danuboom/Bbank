@@ -133,13 +133,20 @@ private fun TransactionItem(
             "" // Neutral
         )
     }
+
+    val description = when {
+        isDebit && !isCredit -> "To: ${txn.toOwnerName ?: "Unknown"}"
+        !isDebit && isCredit -> "From: ${txn.fromOwnerName ?: "Unknown"}"
+        else -> "Transfer"
+    }
+
     // --- END LOGIC ---
 
     // Use ListItem for better semantics and standard Material layout
     ListItem(
         headlineContent = {
             Text(
-                text = txn.description,
+                text = description,
                 fontWeight = FontWeight.SemiBold
             )
         },

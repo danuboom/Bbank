@@ -10,6 +10,9 @@ interface BbankDao {
     @Query("SELECT * FROM users WHERE username = :username")
     suspend fun getUserByUsername(username: String): User?
 
+    @Query("SELECT * FROM users WHERE id = :id")
+    suspend fun getUserById(id: String): User?
+
     @Query("SELECT EXISTS(SELECT 1 FROM users WHERE username = :username)")
     suspend fun doesUserExist(username: String): Boolean
 

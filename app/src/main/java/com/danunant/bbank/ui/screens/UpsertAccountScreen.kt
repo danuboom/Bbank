@@ -31,13 +31,10 @@ fun UpsertAccountScreen(
     var account by remember { mutableStateOf<Account?>(null) }
 
     var name by remember { mutableStateOf("") }
-    var number by remember { mutableStateOf("") } // Store plain number
     var type by remember { mutableStateOf(AccountType.CHECKING) }
     var typeExpanded by remember { mutableStateOf(false) }
 
-    var numberError by remember { mutableStateOf<String?>(null) }
-    val isNumberValid = number.length == 10 && number.all { it.isDigit() }
-    val isFormValid = name.isNotBlank() && isNumberValid
+    val isFormValid = name.isNotBlank()
 
     val isEditMode = accountId != null
     val title = if (isEditMode) "Edit Account" else "Create Account"
@@ -48,7 +45,6 @@ fun UpsertAccountScreen(
             account = viewModel.getAccountById(accountId!!)
             account?.let {
                 name = it.name
-                number = it.number // Store plain number
                 type = it.type
             }
         }
@@ -68,18 +64,13 @@ fun UpsertAccountScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    // Validation check
-                    if (!isNumberValid) {
-                        numberError = "Account number must be 10 digits."
-                        return@FloatingActionButton
-                    }
                     if (name.isBlank()){
                         // Optional: Add name validation error state if needed
                         return@FloatingActionButton
                     }
 
                     scope.launch {
-                        viewModel.saveAccount(accountId, name, type, number) // Save plain number
+                        viewModel.saveAccount(accountId, name, type)
                         onBack()
                     }
                 }
@@ -104,32 +95,6 @@ fun UpsertAccountScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
-            )
-
-            OutlinedTextField(
-                // Display formatted number, store plain number in state
-                value = formatAccountNumber(number), // Use the imported function
-                onValueChange = { newValue ->
-                    val plainNumber = newValue.filter { it.isDigit() }
-                    if (plainNumber.length <= 10) {
-                        number = plainNumber // Store plain number
-                        numberError = null // Clear error on type
-                    }
-                },
-                label = { Text("Account Number (10 digits)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Number,
-                    imeAction = ImeAction.Next
-                ),
-                readOnly = isEditMode,
-                isError = numberError != null,
-                supportingText = {
-                    if (numberError != null) {
-                        Text(numberError!!, color = MaterialTheme.colorScheme.error)
-                    }
-                }
             )
 
             // Account Type Dropdown

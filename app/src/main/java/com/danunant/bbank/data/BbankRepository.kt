@@ -120,12 +120,25 @@ class BbankRepository @Inject constructor(
         return dao.getAccountById(id)
     }
 
+    private suspend fun generateUniqueAccountNumber(): String {
+        var accountNumber: String
+        do {
+            accountNumber = (1..10).map { (0..9).random() }.joinToString("")
+        } while (dao.getAccountByNumber(accountNumber) != null)
+        return accountNumber
+    }
+
     suspend fun saveAccount(account: Account) {
-        // This is an "Upsert" (Update/Insert)
-        if (dao.getAccountById(account.id) == null) {
-            dao.insertAccount(account)
+        val accountToSave = if (account.number.isBlank()) {
+            account.copy(number = generateUniqueAccountNumber())
         } else {
-            dao.updateAccount(account)
+            account
+        }
+
+        if (dao.getAccountById(accountToSave.id) == null) {
+            dao.insertAccount(accountToSave)
+        } else {
+            dao.updateAccount(accountToSave)
         }
     }
 
@@ -150,6 +163,9 @@ class BbankRepository @Inject constructor(
         if (from.ownerId != _currentUser.value?.id) return TransferResult.Error("auth", "Permission denied")
         if (from.balanceSatang < amountSatang) return TransferResult.Error("insufficient", "Insufficient funds")
 
+        val fromOwner = dao.getUserById(from.ownerId)
+        val toOwner = dao.getUserById(to.ownerId)
+
         // Apply changes
         val updatedFrom = from.copy(balanceSatang = from.balanceSatang - amountSatang)
         val updatedTo = to.copy(balanceSatang = to.balanceSatang + amountSatang)
@@ -159,7 +175,9 @@ class BbankRepository @Inject constructor(
             toAccountId = to.id,
             amountSatang = amountSatang,
             description = desc.ifBlank { "Transfer" },
-            at = now()
+            at = now(),
+            fromOwnerName = fromOwner?.displayName,
+            toOwnerName = toOwner?.displayName,
         )
 
         // Use the DAO's @Transaction

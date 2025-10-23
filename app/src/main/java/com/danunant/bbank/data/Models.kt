@@ -1,6 +1,5 @@
 package com.danunant.bbank.data
 
-import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -48,7 +47,9 @@ data class Txn(
     val toAccountId: String?,
     val amountSatang: Long,
     val description: String,
-    val at: Instant
+    val at: Instant,
+    val fromOwnerName: String? = null,
+    val toOwnerName: String? = null,
 )
 
 sealed class TransferResult {
