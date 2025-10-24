@@ -128,17 +128,15 @@ private fun AccountCard(
                 modifier = Modifier.padding(top = 12.dp)
             )
 
-            if (account.balanceSatang == 0L) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    IconButton(onClick = onEdit) {
-                        Icon(Icons.Default.Edit, "Edit", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    IconButton(onClick = onDelete) {
-                        Icon(Icons.Default.Delete, "Delete", tint = MaterialTheme.colorScheme.error)
-                    }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                IconButton(onClick = onEdit) {
+                    Icon(Icons.Default.Edit, "Edit", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Default.Delete, "Delete", tint = MaterialTheme.colorScheme.error)
                 }
             }
         }

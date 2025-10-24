@@ -102,7 +102,7 @@ fun AboutScreen(
                 Spacer(Modifier.height(16.dp))
                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                     Text(
-                        text = "Copyright © 2024. All rights reserved.",
+                        text = "Copyright © 2025. All rights reserved.",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
                     )
